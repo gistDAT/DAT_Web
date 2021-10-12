@@ -55,6 +55,6 @@ def home_view(request):
         new_keyword.test_set = content_list
         new_keyword.save()
         # 나중에 output view로 변환
-        return render(request,'homeapp/home_view.html', context={},)
+        return render(request,'subapp/sub_view.html', context={},)
     else:
         return render(request, 'homeapp/home_view.html', context={'text': '장소 입력 후 잠시만 기다려주세요!'})
