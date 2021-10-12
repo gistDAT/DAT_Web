@@ -4,3 +4,6 @@ from django.db import models
 
 class places(models.Model):
     text = models.CharField(max_length=255, null=False)
+
+class kywords(models.Model):
+    test_set = models.TextField()
