@@ -1,12 +1,10 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
+from django.urls import reverse_lazy, reverse
 from selenium import webdriver
 import time
 # Create your views here.
 from homeapp.models import places,kywords
-
-
-
 
 def home_view(request):
 
@@ -20,7 +18,12 @@ def home_view(request):
         # 크롬 웹브라우저 실행
         # 크롬 버전 94.0.4606.61
 
-        driver = webdriver.Chrome("homeapp/chromedriver.exe")
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        options.add_argument('window-size=1920x1080')
+        options.add_argument("disable-gpu")
+
+        driver = webdriver.Chrome("homeapp/chromedriver.exe", chrome_options=options)
         url_list = []
         content_list = ""
 
@@ -52,6 +55,6 @@ def home_view(request):
         new_keyword.test_set = content_list
         new_keyword.save()
         # 나중에 output view로 변환
-        return render(request,'homeapp/home_view.html', context={'text': temp})
+        return render(request,'homeapp/home_view.html', context={},)
     else:
-        return render(request, 'homeapp/home_view.html', context={'text': '장소를 입력하세요!'})
+        return render(request, 'homeapp/home_view.html', context={'text': '장소 입력 후 잠시만 기다려주세요!'})
