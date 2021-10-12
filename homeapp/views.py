@@ -105,7 +105,6 @@ def home_view(request):
             ranked_words = sorted(set(count_dict), key=lambda x: x[1], reverse=True)[:20]
             return [keyword for keyword, freq in ranked_words]
 
-        text = "광주 펭귄 마을"  # 검색했던 단어
         search_list = search.split()
         search_list.append(search)
         if __name__ == '__main__':
@@ -150,6 +149,7 @@ def home_view(request):
                             real_Keyword.append(w)
         real_Keyword = set(real_Keyword)
         print(real_Keyword)  ## 찐 키워드 검색할 단어
+        # output 크롤링
         real_Keyword = list(real_Keyword)
         keyword1 = real_Keyword[0]
         driver.get("https://www.youtube.com/")
