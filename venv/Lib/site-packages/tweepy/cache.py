@@ -1,14 +1,18 @@
 # Tweepy
-# Copyright 2009-2021 Joshua Roesslein
+# Copyright 2009-2020 Joshua Roesslein
 # See LICENSE for details.
 
 import datetime
 import hashlib
 import logging
-import pickle
 import threading
 import time
 import os
+
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 try:
     import fcntl
@@ -20,7 +24,7 @@ except ImportError:
 log = logging.getLogger(__name__)
 
 
-class Cache:
+class Cache(object):
     """Cache interface"""
 
     def __init__(self, timeout=60):

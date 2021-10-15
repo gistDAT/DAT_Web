@@ -1,16 +1,17 @@
 # Tweepy
-# Copyright 2009-2021 Joshua Roesslein
+# Copyright 2009-2020 Joshua Roesslein
 # See LICENSE for details.
 
 import logging
-from urllib.parse import parse_qs
 
 import requests
+import six
 from requests.auth import AuthBase
 from requests_oauthlib import OAuth1, OAuth1Session
+from six.moves.urllib.parse import parse_qs
 
 from tweepy.api import API
-from tweepy.errors import TweepyException
+from tweepy.error import TweepError
 
 WARNING_MESSAGE = """Warning! Due to a Twitter API bug, signin_with_twitter
 and access_type don't always play nice together. Details
@@ -19,10 +20,14 @@ https://dev.twitter.com/discussions/21281"""
 log = logging.getLogger(__name__)
 
 
-class AuthHandler:
+class AuthHandler(object):
 
     def apply_auth(self, url, method, headers, parameters):
         """Apply authentication headers to request"""
+        raise NotImplementedError
+
+    def get_username(self):
+        """Return the username of the authenticated user"""
         raise NotImplementedError
 
 
@@ -32,12 +37,11 @@ class OAuthHandler(AuthHandler):
     OAUTH_ROOT = '/oauth/'
 
     def __init__(self, consumer_key, consumer_secret, callback=None):
-        if not isinstance(consumer_key, (str, bytes)):
-            raise TypeError("Consumer key must be string or bytes, not "
-                            + type(consumer_key).__name__)
-        if not isinstance(consumer_secret, (str, bytes)):
-            raise TypeError("Consumer secret must be string or bytes, not "
-                            + type(consumer_secret).__name__)
+        if type(consumer_key) == six.text_type:
+            consumer_key = consumer_key.encode('ascii')
+
+        if type(consumer_secret) == six.text_type:
+            consumer_secret = consumer_secret.encode('ascii')
 
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
@@ -64,10 +68,10 @@ class OAuthHandler(AuthHandler):
         try:
             url = self._get_oauth_url('request_token')
             if access_type:
-                url += f'?x_auth_access_type={access_type}'
+                url += '?x_auth_access_type=%s' % access_type
             return self.oauth.fetch_request_token(url)
         except Exception as e:
-            raise TweepyException(e)
+            raise TweepError(e)
 
     def set_access_token(self, key, secret):
         self.access_token = key
@@ -87,7 +91,7 @@ class OAuthHandler(AuthHandler):
             self.request_token = self._get_request_token(access_type=access_type)
             return self.oauth.authorization_url(url)
         except Exception as e:
-            raise TweepyException(e)
+            raise TweepError(e)
 
     def get_access_token(self, verifier=None):
         """
@@ -106,7 +110,7 @@ class OAuthHandler(AuthHandler):
             self.access_token_secret = resp['oauth_token_secret']
             return self.access_token, self.access_token_secret
         except Exception as e:
-            raise TweepyException(e)
+            raise TweepError(e)
 
     def get_xauth_access_token(self, username, password):
         """
@@ -128,7 +132,18 @@ class OAuthHandler(AuthHandler):
             credentials = parse_qs(r.content)
             return credentials.get('oauth_token')[0], credentials.get('oauth_token_secret')[0]
         except Exception as e:
-            raise TweepyException(e)
+            raise TweepError(e)
+
+    def get_username(self):
+        if self.username is None:
+            api = API(self)
+            user = api.verify_credentials()
+            if user:
+                self.username = user.screen_name
+            else:
+                raise TweepError('Unable to get username,'
+                                 ' invalid oauth token!')
+        return self.username
 
 
 class OAuth2Bearer(AuthBase):
@@ -157,8 +172,8 @@ class AppAuthHandler(AuthHandler):
                              data={'grant_type': 'client_credentials'})
         data = resp.json()
         if data.get('token_type') != 'bearer':
-            raise TweepyException('Expected token_type to equal "bearer", '
-                                  f'but got {data.get("token_type")} instead')
+            raise TweepError('Expected token_type to equal "bearer", '
+                             'but got %s instead' % data.get('token_type'))
 
         self._bearer_token = data['access_token']
 
