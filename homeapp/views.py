@@ -168,15 +168,8 @@ def home_view(request):
 
         ).execute()
 
-        ID_list = []
-        print(search_response['items'][0]['id'])
-        for search_result in search_response.get("items", []):
-            ID_list.append(search_result["id"]["videoId"])
-        print(ID_list[0])
-        path = "homeapp/chromedriver.exe"
-        driver = webdriver.Chrome(path)
-        url = 'https://www.youtube.com/watch?v=' + ID_list[0]
-        driver.get(url)
-        return render(request,'homeapp/home_view.html', context={},)
+        put = search_response['items'][0]['id']['videoId']
+        url = 'https://www.youtube.com/watch?v=' + put
+        return render(request,'subapp/sub_view.html', context={'out_put':url},)
     else:
         return render(request,'homeapp/home_view.html', context={'text': '장소 입력 후 잠시만 기다려주세요!'})
